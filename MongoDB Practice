@@ -1,0 +1,208 @@
+/**
+ * MongoDB Practice
+ * -----------------
+ * A single consolidated file of MongoDB shell (mongosh) practice queries,
+ * organized into sections by database. Covers CRUD, querying, sorting/
+ * limiting, projections, array fields, and aggregation with $lookup.
+ *
+ * Run in mongosh, section by section (each section starts with `use <db>`).
+ */
+
+/* ============================================================
+ * 1. movieDB — CRUD + update operators
+ * ============================================================ */
+use movieDB
+
+db.Actor.insertMany([
+  { Actorid: 1, name: 'Amitabh', age: 78, address: 'Mumbai' },
+  { Actorid: 2, name: 'Amir', age: 58, address: 'Mumbai' },
+  { Actorid: 3, name: 'Karan', age: 65, address: 'Delhi' },
+  { Actorid: 4, name: 'Alia', age: 35, address: 'Mumbai' },
+  { Actorid: 5, name: 'Salman', age: 65, address: 'Delhi' },
+  { Actorid: 6, name: 'Ajay', age: 59, address: 'Mumbai' },
+  { Actorid: 7, name: 'Akshay', age: 64, address: 'Pune' },
+  { Actorid: 8, name: 'Sunil', age: 69, address: 'Mumbai' },
+  { Actorid: 9, name: 'Vicky', age: 39, address: 'Mumbai' },
+  { Actorid: 10, name: 'Sara', age: 33, address: 'Mumbai' }
+])
+
+db.Film.insertMany([
+  { Filmid: 101, title: 'pink', rating: 8, Actorid: 9 },
+  { Filmid: 102, title: '3idiots', rating: 8, Actorid: 10 },
+  { Filmid: 103, title: 'Dangal', rating: 6, Actorid: 8 },
+  { Filmid: 104, title: 'alpha', rating: 5, Actorid: 7 },
+  { Filmid: 105, title: 'Titanic', rating: 6, Actorid: 1 },
+  { Filmid: 106, title: 'golmal', rating: 9, Actorid: 3 },
+  { Filmid: 107, title: 'hera pheri', rating: 6, Actorid: 2 },
+  { Filmid: 108, title: 'I', rating: 6, Actorid: 6 },
+  { Filmid: 109, title: 'Uri', rating: 9, Actorid: 5 },
+  { Filmid: 110, title: 'kedarnath', rating: 3, Actorid: 4 }
+])
+
+db.Actor.insertOne({ Actorid: 11, name: 'kaif', age: 36, address: 'Gujrat' })
+db.Film.insertOne({ Filmid: 111, title: 'Raid', rating: 7, Actorid: 11 })
+
+db.Actor.find()
+db.Film.find()
+
+// Remove actors older than 60
+db.Actor.deleteMany({ age: { $gt: 60 } })
+
+// Move a specific actor to Pune
+db.Actor.updateMany({ Actorid: 2 }, { $set: { address: 'Pune' } })
+db.Actor.find()
+
+// Bump rating by 1 for films starting with 'T'
+db.Film.updateMany({ title: { $regex: "^T" } }, { $inc: { rating: 1 } })
+db.Film.find()
+
+// Latest 2 films by actor 1, sorted by year
+db.Film.find({ Actorid: 1 }).sort({ year: -1 }).limit(2)
+
+// Actors sorted by age ascending
+db.Actor.find().sort({ age: 1 })
+
+/* ============================================================
+ * 2. companyDB — employees: update, delete, count
+ * ============================================================ */
+use companyDB
+
+db.employees.insertMany([
+  { id: 1, fname: 'Prathmesh', designation: 'manager', salary: 50000, address: 'Pune' },
+  { id: 2, fname: 'Pranav', designation: 'Hr', salary: 30000, address: 'Pune' },
+  { id: 3, fname: 'Banti', designation: 'Operation', salary: 40000, address: 'Mumbai' },
+  { id: 4, fname: 'bhavesh', designation: 'technical', salary: 34000, address: 'Pune' }
+])
+
+// Give every employee a raise
+db.employees.updateMany({}, { $inc: { salary: 4000 } })
+
+// Update a single employee's address
+db.employees.updateOne({ id: 2 }, { $set: { address: 'Delhi' } })
+
+// Employees who are manager or Hr
+db.employees.find({ $or: [{ designation: 'manager' }, { designation: 'Hr' }] })
+
+// Sort by designation descending
+db.employees.find().sort({ designation: -1 })
+
+// Remove employees whose first name starts with 'P' or 'b'
+db.employees.deleteMany({ fname: { $regex: "^P" } })
+db.employees.deleteOne({ fname: { $regex: "^b" } })
+
+db.employees.find()
+db.employees.countDocuments({ salary: { $gt: 40000 } })
+
+/* ============================================================
+ * 3. deptDB — students: projection, sort+limit, forEach, $or/$in
+ * ============================================================ */
+use deptDB
+
+db.students.insertMany([
+  { id: 1, Fname: 'Pranav', age: 20, gender: 'M', city: 'Pune', percentage: 88 },
+  { id: 2, Fname: 'Ravi', age: 23, gender: 'F', city: 'Mumbai', percentage: 34 },
+  { id: 3, Fname: 'Shashi', age: 21, gender: 'F', city: 'Thane', percentage: 70 },
+  { id: 4, Fname: 'Rahul', age: 22, gender: 'F', city: 'Pune', percentage: 90 }
+])
+
+// Count students above 80%
+db.students.countDocuments({ percentage: { $gt: 80 } })
+
+// Oldest student among those below 40%, only Fname/age fields
+db.students.find(
+  { percentage: { $lt: 40 } },
+  { Fname: 1, age: 1, _id: 0 }
+).sort({ age: -1 }).limit(1)
+
+// Print names of students above 70%
+db.students.find({ percentage: { $gt: 70 } }).forEach(doc => print(doc.name))
+
+// Female students from Pune/Thane, or with percentage above 70
+db.students.find({
+  gender: 'F',
+  $or: [
+    { city: { $in: ['Pune', 'Thane'] } },
+    { percentage: { $gt: 70 } }
+  ]
+})
+
+/* ============================================================
+ * 4. sales — aggregation with $lookup
+ * ============================================================ */
+use sales
+
+db.product.insertMany([
+  { pid: 1, Pname: 'Laptop', price: 65000 },
+  { pid: 2, Pname: 'MacB', price: 154000 },
+  { pid: 3, Pname: 'Phone', price: 5000 },
+  { pid: 4, Pname: 'Tablet', price: 50000 }
+])
+
+db.orders.insertMany([
+  { orderId: 1, cust_name: 'Prathmesh', value: 4500, invoiceID: 101 },
+  { orderId: 2, cust_name: 'Pranav', value: 500 }
+])
+
+db.invoice.insertMany([
+  { invoiceID: 101, orderId: 1, GeneratedOn: '20/01/2022' }
+])
+
+db.product.find({ price: { $gt: 10000 } })
+db.orders.find({ invoiceID: { $exists: false } })
+
+// Join orders with invoice details for a given customer
+db.orders.aggregate([
+  { $match: { cust_name: 'Prathmesh' } },
+  {
+    $lookup: {
+      from: 'invoice',
+      localField: 'invoiceID',
+      foreignField: 'invoiceID',
+      as: 'invoice_details'
+    }
+  }
+])
+
+/* ============================================================
+ * 5. libraryDB — publisher/book queries
+ * ============================================================ */
+use libraryDB
+
+db.publisher.insertMany([
+  { name: 'Pearson', city: 'Mumbai' },
+  { name: 'Wiley', city: 'Pune' }
+])
+
+db.book.insertMany([
+  { title: 'DBMS', author: 'prathmesh', cost: 1200, year: 2023 },
+  { title: 'Rdbms', author: 'shree', cost: 1500, year: 2025 }
+])
+
+db.publisher.find({ city: 'Mumbai' })
+db.book.find({ cost: { $gt: 1000 } })
+db.book.find({ author: 'prathmesh', year: 2023 })
+
+/* ============================================================
+ * 6. hospitalDB — array fields + compound queries
+ * ============================================================ */
+use hospitalDB
+
+db.hospital.insertMany([
+  { name: 'jupyter', specialization: ['pediatric', 'gynaec'], multispeciality: true },
+  { name: 'Ruby', specialization: ['Orthopedic'], multispeciality: false }
+])
+
+db.doctors.insertMany([
+  { name: 'dr.kale', hospital: 'Ruby', days: ['Monday', 'Thursday'] },
+  { name: 'dr.ingole', hospital: 'jupyter', days: ['Saturday'] }
+])
+
+db.review.insertMany([
+  { hospital: 'jupyter', person: 'Rohit', rating: 6 },
+  { hospital: 'Ruby', person: 'Rahul', rating: 7 }
+])
+
+db.hospital.find({ specialization: 'pediatric' })
+
+// Doctors at Ruby who work on Monday
+db.doctors.find({ hospital: 'Ruby', days: 'Monday' })
