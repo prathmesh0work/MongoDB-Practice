@@ -1,12 +1,12 @@
 # MongoDB Practice
 
 Practice queries covering core MongoDB operations in `mongosh` — CRUD,
-querying, sorting/limiting, projections, array fields, and aggregation
-with `$lookup` — across six sample databases.
+querying, sorting/limiting, projections, embedded documents/arrays, and
+aggregation with `$lookup` — across seven sample databases.
 
 ## What's inside
 
-`mongodb-practice.js` is one file, split into six clearly marked sections:
+`mongodb-practice.js` is one file, split into seven clearly marked sections:
 
 | # | Database | Focus |
 |---|---|---|
@@ -16,6 +16,7 @@ with `$lookup` — across six sample databases.
 | 4 | `sales` | `aggregate`, `$match`, `$lookup`, `$exists` |
 | 5 | `libraryDB` | compound filters across two related collections |
 | 6 | `hospitalDB` | array fields, querying arrays and scalars together |
+| 7 | `blogsDB` | embedded documents, `$elemMatch`, `$or` inside `$elemMatch` |
 
 ## Running it
 
@@ -35,3 +36,7 @@ Or copy individual sections into the shell — each one starts with a
   `hospitalDB` field name (`specilization` → `specialization`) and the
   `$lookup` in the `sales` section, where a field name mismatch
   (`invoiceId` vs `invoiceID`) meant the join never actually matched.
+- The `blogsDB` section had a few syntax issues in the original draft: missing
+  commas after `postedAt`, unquoted `date` values (`2019-10-22` parses as
+  subtraction, not a date), `$elematch` → `$elemMatch`, and a stray `find([...])`
+  using an array instead of an object — all fixed.
