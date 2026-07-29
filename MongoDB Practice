@@ -206,3 +206,41 @@ db.hospital.find({ specialization: 'pediatric' })
 
 // Doctors at Ruby who work on Monday
 db.doctors.find({ hospital: 'Ruby', days: 'Monday' })
+
+/* ============================================================
+ * 7. blogsDB — embedded documents + array element matching
+ * ============================================================ */
+use blogsDB
+
+db.post.insertMany([
+  {
+    title: 'Best pasta', tags: ['Food'], publisher: 'Amit', postedAt: 2017,
+    comments: [{ user: 'sagar', message: 'like', like: 3, date: '2019-10-22' }]
+  },
+  {
+    title: 'trekking guide', tags: ['travel'], publisher: 'Pooja', postedAt: 2018,
+    comments: [{ user: 'Neha', message: 'nice', like: 0, date: '2019-09-01' }]
+  }
+])
+
+db.post.find({ tags: 'Food' })
+db.post.find({ publisher: 'Amit' })
+
+// Travel posts from before 2018 with a matching comment
+db.post.find({
+  tags: 'travel',
+  postedAt: { $lt: 2018 },
+  comments: { $elemMatch: { user: 'sagar', message: 'like' } }
+})
+
+// Posts with a comment either dated before 2018 or with 0 likes
+db.post.find({
+  comments: {
+    $elemMatch: {
+      $or: [
+        { date: { $lt: '2018-01-01' } },
+        { like: 0 }
+      ]
+    }
+  }
+})
